@@ -15,6 +15,9 @@ pip install -r reverse-image-search-main/requirements.txt
 # Run the app
 img_search
 ```
+## Screenshot
+<img src="./reverse_image_search/static/rev-image-search.jpg">
+
 ## How to use
 *  Provide the directory path where the images are located. You can either 
 

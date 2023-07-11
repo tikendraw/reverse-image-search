@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "img_search"
+authors = [
+    {name = "Tikendra Kumar Sahu", email = "tikendraksahu1029@gmail.com"},
+]
+version = "1.0.1"
+description = "img_search"
+requires-python = ">=3.10"
+
+dependencies = [
+    "requests",
+	"termcolor>=2.2.0",
+	"streamlit==1.24.0",
+	"matplotlib==3.7.1",
+	"scikit-learn==1.3.0",
+	"compress-pickle==2.1.0",
+]
+
+[project.scripts]
+img_search = "reverse_image_search.launch:launch"
+
+

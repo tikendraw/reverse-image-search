@@ -8,7 +8,7 @@ This tool can be helpful for a Identifying similar images
 To use the reverse image search engine, simply follow these steps:
 
 ```
-git clone 
+git clone https://github.com/tikendraw/reverse-image-search.git
 pip install reverse-image-search-main/.
 pip install -r reverse-image-search-main/requirements.txt
 

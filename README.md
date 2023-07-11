@@ -1,8 +1,8 @@
 # Reverse Image Search Engine(Local)
-This is a simple reverse image search engine that uses the Streamlit framework. It allows users to finds similar images from a specified directory.
+This is a simple reverse image search engine that uses the Streamlit framework. It allows users to find similar images from a specified directory.
 
 ## Why is it helpful?
-This tool can be helpful for a Identifying similar images
+This tool can help identify similar images
 
 ## Installation
 To use the reverse image search engine, simply follow these steps:
@@ -18,7 +18,7 @@ img_search
 ## How to use
 *  Provide the directory path where the images are located. You can either 
 
-* Upload an image or paste the full filepath of the image you want to compare.
+* Upload an image or paste the full file path of the image you want to compare.
 
 * Number of similar Images to find. 
 
@@ -29,13 +29,15 @@ img_search
 ## Tech stack use
 The reverse image search engine is built using the following technologies:
 
-Streamlit 
-Python
-Pillow
-NumPy
-Scikit-learn
-
+* Python
+* Scikit-learn
+* Tensorflow
+* Pillow
+* NumPy
+* Streamlit
+  
 ## How to contribute
+I wanted to add a **Facial recognition feature** for future updates.
 If you would like to contribute to the reverse image search engine, please feel free to open a pull request.
 
 ## License

@@ -7,18 +7,17 @@ import concurrent.futures
 
 
 def get_image_paths(directory_path: Path, recursive: bool = False) -> list:
-    image_extensions = ['.jpg', '.jpeg', '.png']  # Add more extensions if needed
+    image_extensions = [".jpg", ".jpeg", ".png"]  # Add more extensions if needed
     image_paths = []
-    
+
     for file_path in directory_path.iterdir():
         if file_path.is_file() and (file_path.suffix.lower() in image_extensions):
             image_paths.append(str(file_path.absolute()))
 
         elif recursive and file_path.is_dir():
             image_paths.extend(get_image_paths(file_path, recursive))
-    
-    return image_paths
 
+    return image_paths
 
 
 def show_images(x: list, similar: list = None, figsize=None):
@@ -35,17 +34,22 @@ def show_images(x: list, similar: list = None, figsize=None):
     for num, i in enumerate(x, 1):
         img = plt.imread(i)
         axes[num - 1].imshow(img)
-        title = f"{i.name}\n({100 * similar[num - 1]:.2f}%)" if similar is not None else i.name
+        title = (
+            f"{i.name}\n({100 * similar[num - 1]:.2f}%)"
+            if similar is not None
+            else i.name
+        )
         axes[num - 1].set_title(title)
         _ = axes[num - 1].axis(False)
 
     plt.tight_layout()
     return fig
 
+
 def show_images2(x: list, similar: list = None):
     n_plots = len(x)
     num_columns = 7
-    num_rows = (n_plots // num_columns)  # Ceiling division
+    num_rows = n_plots // num_columns  # Ceiling division
 
     # Create the columns for image display
     cols = st.columns(num_columns)
@@ -54,7 +58,11 @@ def show_images2(x: list, similar: list = None):
 
     for num, i in enumerate(x, 1):
         img = Image.open(i)
-        title = f"{i.name}\n({100 * similar[num - 1]:.2f}%)" if similar is not None else i.name
+        title = (
+            f"{i.name}\n({100 * similar[num - 1]:.2f}%)"
+            if similar is not None
+            else i.name
+        )
 
         # Display image and title in the appropriate column
         with cols[(num - 1) % num_columns]:
@@ -64,7 +72,9 @@ def show_images2(x: list, similar: list = None):
 def show_images3(x: list, similar: list = None):
     n_plots = len(x)
     num_columns = 5
-    num_rows = (n_plots // num_columns) + (n_plots % num_columns > 0)  # Ceiling division
+    num_rows = (n_plots // num_columns) + (
+        n_plots % num_columns > 0
+    )  # Ceiling division
 
     # Create the columns for image display
     cols = st.columns(num_columns)
@@ -73,7 +83,11 @@ def show_images3(x: list, similar: list = None):
 
     def process_image(index, path, similarity):
         img = Image.open(path)
-        title = f"{path.name}\n({100 * similarity:.2f}%)" if similar is not None else path.name
+        title = (
+            f"{path.name}\n({100 * similarity:.2f}%)"
+            if similar is not None
+            else path.name
+        )
 
         # Display image and title in the appropriate column
         with cols[index]:
@@ -90,5 +104,5 @@ def show_images3(x: list, similar: list = None):
         # concurrent.futures.wait(futures)
 
 
-if __name__=='__main__':
-    print(__file__, ' running...')
+if __name__ == "__main__":
+    print(__file__, " running...")

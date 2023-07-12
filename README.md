@@ -34,7 +34,7 @@ The reverse image search engine is built using the following technologies:
 
 * Python
 * Scikit-learn
-* Tensorflow <img src="https://www.gstatic.com/devrel-devsite/prod/v7f3d01938fc1f82b33d8c11166fff9e54cfd22895803f2cef46a3b200be855eb/tensorflow/images/lockup.svg", height = 10px, width = 40px>
+* Tensorflow ![tensorflow]("https://www.gstatic.com/devrel-devsite/prod/v7f3d01938fc1f82b33d8c11166fff9e54cfd22895803f2cef46a3b200be855eb/tensorflow/images/lockup.svg"), height = 10px, width = 40px>
 * Pillow
 * NumPy
 * Streamlit

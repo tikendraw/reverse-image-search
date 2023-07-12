@@ -40,7 +40,11 @@ The reverse image search engine is built using the following technologies:
 * Streamlit
   
 ## How to contribute
-I wanted to add a **Facial recognition feature** for future updates.
+Future updates:
+
+- [ ] Facial Recognition
+- [ ] Search Images with words
+
 If you would like to contribute to the reverse image search engine, please feel free to open a pull request.
 
 ## License

@@ -1,0 +1,7 @@
+__pycache__/
+.ipynb_checkpoints/
+.virtual_documents/
+v2/samples/*.jpg
+v2/samples/
+"'/*"
+"*/'/*"

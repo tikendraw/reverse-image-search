@@ -8,7 +8,7 @@ from utils import get_image_paths, show_images, show_images2, show_images3
 
 st.set_page_config(layout="wide")
 
-star = """<!-- Place this tag in your head or just before your close body tag. -->
+star = """
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 
 <!-- Place this tag where you want the button to render. -->
@@ -21,7 +21,7 @@ star = """<!-- Place this tag in your head or just before your close body tag. -
 
 
 def main():
-    st.title("Image Similarity App (not Facial Recognition)")
+    st.title("Image Similarity App")
 
     st.write("Current Directory: ", Path(os.getcwd()))
 

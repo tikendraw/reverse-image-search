@@ -5,3 +5,4 @@ v2/samples/*.jpg
 v2/samples/
 v2/mores/*.*
 v2/mores/
+local_embeddings/*

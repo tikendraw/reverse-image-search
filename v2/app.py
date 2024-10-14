@@ -31,10 +31,10 @@ def main():
         with open("config.json", "r") as f:
             config = json.load(f)
     except FileNotFoundError:
-        config = {"folders_embedded": [], "batch_size": 10, "num_similar_images": 5}
+        config = {"folders_embedded": [], "batch_size": 16, "num_similar_images": 20, "n_cols":5}
 
-    embedding_model = EfficientNetEmbeddingFunction()
-    db = EmbeddingStore("local_embeddings", embedding_model)
+
+    db = EmbeddingStore("local_embeddings", embedding_model=EfficientNetEmbeddingFunction())
 
     st.set_page_config(layout="wide")
     st.title("Reverse Image Search")
@@ -108,12 +108,14 @@ def main():
         n_cols = st.number_input(
             "Number of columns for displaying images:",
             min_value=1,
-            value=7,
+            value=config.get("n_cols", 5),
             key="n_cols_input",
         )
 
         config["num_similar_images"] = num_similar_images
         config["batch_size"] = batch_size
+        config['n_cols'] = n_cols
+
 
         with open("config.json", "w") as f:
             json.dump(config, f)

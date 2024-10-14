@@ -70,21 +70,23 @@ class EmbeddingStore(BaseVectorDB):
                 file_hash.update(chunk)
                 chunk = f.read(8192)
         return file_hash.hexdigest()
-
-    def update_images(
-        self,
+    
+    
+    def get_updated_image_paths(
+        self, 
         image_paths: list[str | Path] = None,
         image_dir: str = None,
-        batch_size: int = 16,
-    ):
-
+    ) -> dict:
+        
+        """ returns dict with keys "new_image_paths" and "updated_image_paths" """
+        
         if not image_paths:
             image_paths = [
                 str(p)
                 for p in Path(image_dir).glob("**/*")
                 if p.suffix.lower() in IMAGE_EXTENSIONS
             ]
-
+        
         new_images = []
         updated_images = []
 
@@ -108,6 +110,18 @@ class EmbeddingStore(BaseVectorDB):
                 updated_images.append((image_id, image_path))
                 self.image_cache[image_path]["hash"] = file_hash
                 self.image_cache[image_path]["mtime"] = file_mtime
+        
+        return {
+            "new_image_paths": new_images, 
+            "updated_image_paths": updated_images,
+        }
+            
+    def update_images(
+        self,
+        image_paths: list[str | Path] = None,
+        batch_size: int = 16,
+    ):
+
 
         if new_images:
             self.add_images(

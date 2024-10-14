@@ -18,7 +18,13 @@ cd reverse-image-search
 # install with pip
 pip install . 
 
-# Run the app
+```
+
+## Run
+
+bash command
+```bash
+# Run the app with command 
 img_search
 
 ```

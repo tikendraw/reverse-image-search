@@ -1,5 +1,5 @@
 # Reverse Image Search Engine(Local)
-This is a simple reverse image search engine that uses the Streamlit framework. It allows users to find similar images from a specified directory.
+This is a simple reverse image search tool that uses the Streamlit framework. It allows users to find similar images from a specified directory.
 
 ## Why is it helpful?
 This tool can help identify similar images
@@ -7,21 +7,32 @@ This tool can help identify similar images
 ## Installation
 To use the reverse image search engine, simply follow these steps:
 
-```
+```bash
+
+# clone the repo
 git clone https://github.com/tikendraw/reverse-image-search.git
-pip install reverse-image-search-main/.
-pip install -r reverse-image-search-main/requirements.txt
+
+# go inside
+cd reverse-image-search
+
+# install with pip
+pip install . 
 
 # Run the app
 img_search
+
+```
+or just run the `launch.py` file
+```bash
+python launch.py
 ```
 ## Screenshot
-<img src="./reverse_image_search/static/rev-image-search.jpg">
+<img src="./static/rev-image-search.jpg">
 
 ## How to use
-*  Provide the directory path where the images are located. You can either 
+*  Provide the directory path where the images are located. the create embeddings. 
 
-* Upload an image or paste the full file path of the image you want to compare.
+* Upload an image.
 
 * Number of similar Images to find. 
 
@@ -33,10 +44,10 @@ img_search
 The reverse image search engine is built using the following technologies:
 
 * Python
-* Scikit-learn
-* Tensorflow 
+* transformers 
+* pytorch 
 * Pillow
-* NumPy
+* Chromadb(vector database)
 * Streamlit
   
 ## How to contribute

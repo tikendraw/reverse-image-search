@@ -28,4 +28,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-image_search = 'launch_v2:launch'
+image_search = 'launch:launch'

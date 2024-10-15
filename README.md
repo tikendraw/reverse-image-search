@@ -25,7 +25,7 @@ pip install .
 bash command
 ```bash
 # Run the app with command 
-img_search
+image_search
 
 ```
 or just run the `launch.py` file

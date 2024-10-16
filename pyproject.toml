@@ -10,7 +10,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 torch = "^2.4.1"
 chromadb = "^0.5.12"
 streamlit = "^1.39.0"

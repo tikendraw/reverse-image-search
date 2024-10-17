@@ -4,9 +4,10 @@ import uuid
 import json
 from pathlib import Path
 from typing import Dict, List, Union
-from basevectordb import BaseVectorDB
+from .basevectordb import BaseVectorDB
 from chromadb import PersistentClient
 from chromadb.utils.data_loaders import ImageLoader
+import numpy as np
 from chromadb.api.types import EmbeddingFunction
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")  # keep it lowercase
@@ -165,3 +166,21 @@ class EmbeddingStore(BaseVectorDB):
     def delete_collection(self):
         """Delete the current collection from the client."""
         self._client.delete_collection(self.collection_name)
+        
+    def delete_embeddings(self, image_dir:str|Path=None, image_paths:list[str]=None) -> None:
+        """Deletes embeddings from the database."""
+        if image_dir:
+            if isinstance(image_dir, str):
+                image_dir = Path(image_dir)
+                assert image_dir.is_dir(), f"The directory '{image_dir}' does not exist."
+                
+            image_paths = [str(i.absolute()) for i in image_dir.iterdir()]
+        
+        out = self.collection.query(query_uris=image_paths, include=['uris'], n_results=1)
+        
+        uris =  np.ravel(out['uris']).tolist()
+        ids =   np.ravel(out['ids']).tolist()
+        
+        delete_ids = [idd for idd, uri in zip(ids, uris) if uri in image_paths]
+        self.collection.delete(ids=delete_ids)
+        print(f'deleted {len(delete_ids)} embeddins!')

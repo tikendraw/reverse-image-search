@@ -16,7 +16,7 @@ except FileNotFoundError:
 
 
 @click.group()
-def cli():
+def cli_func():
     pass
 
 
@@ -190,12 +190,12 @@ def change_configs(batch_size, num_similar_images, n_cols):
     click.echo("Configuration updated successfully.")
 
 
-cli.add_command(search)
-cli.add_command(embed)
-cli.add_command(show_embedded_folders)
-cli.add_command(show_configs)
-cli.add_command(change_configs)
+cli_func.add_command(search)
+cli_func.add_command(embed)
+cli_func.add_command(show_embedded_folders)
+cli_func.add_command(show_configs)
+cli_func.add_command(change_configs)
 
 
 if __name__ == '__main__':
-    cli()
+    cli_func()

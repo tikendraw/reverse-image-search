@@ -9,7 +9,7 @@ from chromadb import PersistentClient
 from chromadb.utils.data_loaders import ImageLoader
 from chromadb.api.types import EmbeddingFunction
 
-IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif")  # keep it lowercase
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")  # keep it lowercase
 
 class EmbeddingStore(BaseVectorDB):
     def __init__(
@@ -63,8 +63,8 @@ class EmbeddingStore(BaseVectorDB):
 
     def _list_images_in_dir(self, image_dir: str) -> List[str]:
         """Return a list of image paths in a directory with valid extensions."""
-        return [
-            str(p)
+        return  [
+            str(p.absolute())
             for p in Path(image_dir).glob("**/*")
             if p.suffix.lower() in IMAGE_EXTENSIONS
         ]

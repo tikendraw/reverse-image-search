@@ -23,13 +23,15 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         Loads an image and processes it using the model's image processor.
         Reusable helper function for single and batch image processing.
         """
-
         if isinstance(image, str) or isinstance(image, Path):
             image = Image.open(image)
 
+        if isinstance(image, np.ndarray):
+            image = Image.fromarray(image) 
+
         if image.mode != "RGB":
             image = image.convert("RGB")
-
+            
         image = self.image_processor(images=image, return_tensors="pt").to(self.device)
 
         return image["pixel_values"]

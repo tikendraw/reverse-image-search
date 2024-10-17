@@ -27,6 +27,9 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         if isinstance(image, str) or isinstance(image, Path):
             image = Image.open(image)
 
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+
         image = self.image_processor(images=image, return_tensors="pt").to(self.device)
 
         return image["pixel_values"]

@@ -3,6 +3,7 @@ __pycache__/
 .virtual_documents/
 v2/samples/*.jpg
 v2/samples/
+v2/samples2/
 v2/mores/*.*
 v2/mores/
 local_embeddings/*

@@ -15,7 +15,6 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         )
         self._model_name = model_name
         self.image_processor = AutoImageProcessor.from_pretrained(model_name)
-        # self.model = EfficientNetModel.from_pretrained(model_name).to(self.device)
         self.model = AutoModel.from_pretrained(model_name).to(self.device)
 
     def load_image(self, image: str | Path | Image.Image | np.ndarray):

@@ -22,16 +22,50 @@ pip install .
 
 ## Run
 
-bash command
-```bash
-# bash command 
-image_search
-```
-or just run the `launch.py` file
-```bash
-python launch.py
-```
+1. Via browser
+      bash command
+      ```bash
+      # bash command 
+      image_search
+      ```
+      or just run the `launch.py` file
+      ```bash
+      python launch.py
+      ```
+2. Via command line
+      ```bash
+      # bash command 
+      image_search_cli
+      ```
+      or just run the `cli.py` file
+      ```bash
+      python cli.py           
+      ```   
 
+      * Embed a directory
+        ```bash
+        image_search_cli embed create -d <directory_path>
+        ```
+      * Search for similar images
+        ```bash
+        image_search_cli search <image_path> -n <num_similar_images>
+        ``` 
+      * Search for multiple images
+        ```bash
+        image_search_cli search <image_path1> <image_path2> <image_path3> ...
+        ```
+      * Update embeddings for a directory
+        ```bash
+        image_search_cli embed update -d <directory_path>
+        ```
+      * Delete embeddings for a directory
+        ```bash
+        image_search_cli embed delete -d <directory_path>
+        ```
+      * Delete all embeddings
+        ```bash
+        image_search_cli embed delete -d delete_all_embeddings
+        ```
 
 ## Screenshot
 <img src="./static/rev-image-search.jpg">

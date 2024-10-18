@@ -66,11 +66,6 @@ pip install .
 2. CLI
 <img src="./static/rev-image-search-cli.jpg">
 
-## How to use
-* Provide the directory path where the images are located (to embed). 
-* Upload an image (to search).
-* Number of similar Images to find. 
-
 
 ## Tech stack use
 The reverse image search engine is built using the following technologies:

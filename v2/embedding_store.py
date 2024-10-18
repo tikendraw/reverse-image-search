@@ -9,8 +9,10 @@ from chromadb import PersistentClient
 from chromadb.utils.data_loaders import ImageLoader
 import numpy as np
 from chromadb.api.types import EmbeddingFunction
+from tqdm import tqdm
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")  # keep it lowercase
+BATCH_SIZE = 16
 
 class EmbeddingStore(BaseVectorDB):
     def __init__(
@@ -27,7 +29,7 @@ class EmbeddingStore(BaseVectorDB):
         self.cache_file = Path(self._save_dir) / cache_file
         self.image_cache = self.load_cache()
         self.setup()
-        
+
     def setup(self):
         self._client = self._initialize_client()
         self.collection = self._get_or_create_collection()
@@ -103,7 +105,7 @@ class EmbeddingStore(BaseVectorDB):
         """Update the image cache with new hash and modification time."""
         self.image_cache[image_path] = {"id": image_id, "hash": file_hash, "mtime": file_mtime}
 
-    def update_images(self, image_paths: List[Union[str, Path]] = None, batch_size: int = 16):
+    def update_images(self, image_paths: List[Union[str, Path]] = None, batch_size: int = BATCH_SIZE):
         """Update image embeddings in the collection."""
         paths_info = self.get_updated_image_paths(image_paths=image_paths)
         new_images, updated_images = paths_info["new_image_paths"], paths_info["updated_image_paths"]
@@ -113,17 +115,20 @@ class EmbeddingStore(BaseVectorDB):
             print(f"Added {len(new_images)} new images.")
 
         if updated_images:
-            self.update_embeddings([path for _, path in updated_images], [id for id, _ in updated_images])
+            self.update_embeddings([path for _, path in updated_images], [id for id, _ in updated_images], batch_size=batch_size)
             print(f"Updated {len(updated_images)} existing images.")
 
         self.save_cache()
 
-    def update_embeddings(self, image_paths: List[Union[str, Path]], image_ids: List[str]):
+    def update_embeddings(self, image_paths: List[Union[str, Path]], image_ids: List[str], batch_size: int = BATCH_SIZE):
         """Update embeddings for given image paths and IDs."""
-        embeddings = self.embed_images(image_paths)
-        self.collection.update(ids=image_ids, uris=image_paths, embeddings=embeddings)
+        for i in tqdm(range(0, len(image_paths), batch_size), desc="Updating embeddings"):
+            batch_paths = image_paths[i: i + batch_size]
+            batch_ids = image_ids[i: i + batch_size]
+            embeddings = self.embed_images(batch_paths, batch_size=batch_size)
+            self.collection.update(ids=batch_ids, uris=batch_paths, embeddings=embeddings)
 
-    def embed_images(self, image_paths: List[str], batch_size: int = 16):
+    def embed_images(self, image_paths: List[str], batch_size: int = BATCH_SIZE):
         """Generate embeddings for a list of image paths."""
         return self.embedding_model.batch_embed_images(image_paths, batch_size=batch_size)
 
@@ -132,7 +137,7 @@ class EmbeddingStore(BaseVectorDB):
         image_paths: List[str] = None,
         image_dir: Union[str, Path] = None,
         image_ids: List[str] = None,
-        batch_size: int = 16
+        batch_size: int = BATCH_SIZE
     ):
         """Add images to the collection from paths or a directory."""
         if image_paths is None and image_dir:
@@ -140,18 +145,21 @@ class EmbeddingStore(BaseVectorDB):
 
         self._add_images(image_paths, image_ids=image_ids, batch_size=batch_size)
 
-    def _add_images(self, image_paths: List[str], image_ids: List[str] = None, batch_size: int = 16):
+    def _add_images(self, image_paths: List[str], image_ids: List[str] = None, batch_size: int = BATCH_SIZE):
         """Helper method to handle image addition logic."""
         if image_ids is None:
             image_ids = [str(uuid.uuid4()) for _ in image_paths]
 
-        embeddings = self.embed_images(image_paths, batch_size=batch_size)
-        self.collection.add(ids=image_ids, uris=image_paths, embeddings=embeddings)
+        for i in tqdm(range(0, len(image_paths), batch_size), desc="Adding images"):
+            batch_paths = image_paths[i: i + batch_size]
+            batch_ids = image_ids[i: i + batch_size]
+            embeddings = self.embed_images(batch_paths, batch_size=batch_size)
+            self.collection.add(ids=batch_ids, uris=batch_paths, embeddings=embeddings)
 
-        for id, path in zip(image_ids, image_paths):
-            file_hash = self.get_file_hash(path)
-            file_mtime = os.path.getmtime(path)
-            self._update_cache(path, id, file_hash, file_mtime)
+            for id, path in zip(batch_ids, batch_paths):
+                file_hash = self.get_file_hash(path)
+                file_mtime = os.path.getmtime(path)
+                self._update_cache(path, id, file_hash, file_mtime)
 
         self.save_cache()
 

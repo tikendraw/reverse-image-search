@@ -14,10 +14,13 @@ python = "^3.10"
 torch = "^2.4.1"
 chromadb = "^0.5.12"
 streamlit = "^1.39.0"
+click = "^8.1.7"
+chafa-py = "^1.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
+matplotlib = "^3.9.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -25,3 +28,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 image_search = 'launch:launch'
+image_search_cli = 'v2.cli:cli_func'

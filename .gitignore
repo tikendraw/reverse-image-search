@@ -8,3 +8,4 @@ v2/mores/*.*
 v2/mores/
 local_embeddings/*
 hi.py
+config.json

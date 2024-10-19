@@ -64,22 +64,11 @@ class EmbeddingStore(BaseVectorDB):
                 file_hash.update(chunk)
         return file_hash.hexdigest()
 
-    def _list_images_in_dir(self, image_dir: str) -> List[str]:
-        """Return a list of image paths in a directory with valid extensions."""
-        return  [
-            str(p.absolute())
-            for p in Path(image_dir).glob("**/*")
-            if p.suffix.lower() in IMAGE_EXTENSIONS
-        ]
-
     def get_updated_image_paths(
         self, 
         image_paths: List[Union[str, Path]] = None, 
-        image_dir: Union[str, Path] = None
     ) -> Dict[str, List[tuple[str, str]]]:
         """Return dict containing new and updated image paths based on file hash and modification time."""
-        if image_paths is None and image_dir:
-            image_paths = self._list_images_in_dir(image_dir)
 
         new_images, updated_images = [], []
 
@@ -135,13 +124,10 @@ class EmbeddingStore(BaseVectorDB):
     def add_images(
         self,
         image_paths: List[str] = None,
-        image_dir: Union[str, Path] = None,
         image_ids: List[str] = None,
         batch_size: int = BATCH_SIZE
     ):
         """Add images to the collection from paths or a directory."""
-        if image_paths is None and image_dir:
-            image_paths = self._list_images_in_dir(image_dir)
 
         self._add_images(image_paths, image_ids=image_ids, batch_size=batch_size)
 
@@ -175,15 +161,9 @@ class EmbeddingStore(BaseVectorDB):
         """Delete the current collection from the client."""
         self._client.delete_collection(self.collection_name)
         
-    def delete_embeddings(self, image_dir:str|Path=None, image_paths:list[str]=None) -> None:
+    def delete_embeddings(self, image_paths:list[str]=None) -> None:
         """Deletes embeddings from the database."""
-        if image_dir:
-            if isinstance(image_dir, str):
-                image_dir = Path(image_dir)
-                assert image_dir.is_dir(), f"The directory '{image_dir}' does not exist."
-                
-            image_paths = [str(i.absolute()) for i in image_dir.iterdir()]
-        
+        image_paths = list(set(image_paths))
         out = self.collection.query(query_uris=image_paths, include=['uris'], n_results=1)
         
         uris =  np.ravel(out['uris']).tolist()

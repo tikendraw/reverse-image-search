@@ -8,8 +8,8 @@ from pathlib import Path
 
 from PIL import Image
 import numpy as np
-from embed_model import EfficientNetEmbeddingFunction
-from embedding_store import EmbeddingStore
+from v2.embed_model import EfficientNetEmbeddingFunction
+from v2.embedding_store import EmbeddingStore
 import os
 import tempfile
 from tqdm import tqdm
@@ -137,7 +137,6 @@ def main():
             [temp_file_path], k=config.get("num_similar_images", 20)
         )
         similar_images = results["uris"][0]
-        # similarity_value = results['distances'][0]
 
         _, l, _ = st.columns([2, 2, 2])
 
@@ -148,7 +147,6 @@ def main():
 
         fig = show_images2(similar_images, n_cols)
 
-        # Clean up temporary file
         os.unlink(temp_file_path)
 
 

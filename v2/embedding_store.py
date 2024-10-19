@@ -4,7 +4,7 @@ import uuid
 import json
 from pathlib import Path
 from typing import Dict, List, Union
-from .basevectordb import BaseVectorDB
+from v2.basevectordb import BaseVectorDB
 from chromadb import PersistentClient
 from chromadb.utils.data_loaders import ImageLoader
 import numpy as np

@@ -2,39 +2,31 @@ import streamlit as st
 from PIL import Image
 import os
 import tempfile
-from tqdm import tqdm
-import json
-from pathlib import Path
-
 from PIL import Image
-import numpy as np
-from v2.embed_model import EfficientNetEmbeddingFunction
-from v2.embedding_store import EmbeddingStore
 import os
 import tempfile
-from tqdm import tqdm
+from v2.common import (
+    load_embed_store,
+    create_embeddings,
+    update_embeddings,
+    delete_embeddings,
+    get_similar_images,
+    load_config,
+    save_config,
+    show_images2,
+    list_images
+)
+from functools import partial
 
+INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", )
 
-def show_images2(x: list, num_columns: int = 7):
-    cols = st.columns(num_columns)
-    x = [Path(i) for i in x]
-
-    for num, i in enumerate(x, 1):
-        img = Image.open(i)
-
-        with cols[(num - 1) % num_columns]:
-            st.image(img, caption=i.name, use_column_width=True)
+list_images = partial(list_images, include_extensions=INCLUDE_IMAGE_EXTENSIONS)
 
 
 def main():
-    try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        config = {"folders_embedded": [], "batch_size": 16, "num_similar_images": 20, "n_cols":5}
+    config:dict = load_config()
 
-
-    db = EmbeddingStore("local_embeddings", embedding_model=EfficientNetEmbeddingFunction())
+    db = load_embed_store()
 
     st.set_page_config(layout="wide")
     st.title("Reverse Image Search")
@@ -45,51 +37,57 @@ def main():
         image_dir = st.text_input(
             "Enter directory path containing images for embeddings:"
         )
-        st.write("Embedded Directories:")
-        for dir in config["folders_embedded"]:
-            st.write(f"- {dir}")
+        
+        if config["folders_embedded"]:
+            with st.expander(f"Embedded folders({len(config['folders_embedded'])})"):
+                for folder in config["folders_embedded"]:
+                    st.write(folder)
+        
 
+
+        recursive = st.checkbox("Recursive", value=True)
+        
         if st.button("Create Embeddings"):
+            print('creating embeddings')
             if image_dir and os.path.isdir(image_dir):
-                if image_dir in config["folders_embedded"]:
-                    st.warning(
-                        "Embeddings already exist for this directory. Use 'Update Embeddings' to refresh."
-                    )
-                else:
-                    image_paths = [
-                        os.path.join(image_dir, f)
-                        for f in os.listdir(image_dir)
-                        if f.lower().endswith((".jpg", ".jpeg", ".png"))
-                    ]
+                created_paths = create_embeddings(db, image_dir, recursive, config)
+                
+                if image_dir not in config["folders_embedded"]:
+                    config["folders_embedded"].extend(created_paths)
 
-                    # Batching logic
-                    batch_size = config.get("batch_size", 16)
-                    num_batches = (len(image_paths) + batch_size - 1) // batch_size
-
-                    progress_bar = st.progress(0)
-                    for i in tqdm(range(num_batches)):
-                        start = i * batch_size
-                        end = min((i + 1) * batch_size, len(image_paths))
-                        batch_paths = image_paths[start:end]
-                        db.add_images(batch_paths)
-                        progress_bar.progress((i + 1) / num_batches)
-
-                    st.success("Embeddings created successfully!")
-                    config["folders_embedded"].append(image_dir)
-
+                st.success("Embeddings created successfully!")
             else:
                 st.error("Please enter a valid directory path.")
 
         if st.button("Update Embeddings"):
-            for path in config["folders_embedded"]:
-                db.update_images(image_dir=path)
+            print('updating embeddings')
+            if image_dir and os.path.isdir(image_dir):
+                updated_path=update_embeddings(db, image_dir, recursive, config)
+            
+            else:
+                for path in config["folders_embedded"]:
+                    updated_path=update_embeddings(db, path, recursive, config)
+            
+            if updated_path:
+                config["folders_embedded"].extend(updated_path)
+                config["folders_embedded"] = list(set(config["folders_embedded"]))
+                    
             st.success("Embeddings updated successfully!")
 
         if st.button("Delete Embeddings"):
-            db.delete_collection()
+            print('deleting embeddings')
+            deleted_paths = delete_embeddings(db, image_dir, recursive, config)
             db.setup()
-            config["folders_embedded"] = []
-            st.success("Embeddings deleted successfully!")
+            
+            if image_dir:
+                if image_dir.lower().strip() == 'delete_all_embeddings':
+                    config["folders_embedded"] = []
+                else:
+                    config["folders_embedded"] = [i for i in config["folders_embedded"] if i not in deleted_paths]
+                
+                save_config(config)
+            
+                st.success("Embeddings deleted successfully!")
 
         st.header("Search Settings")
         num_similar_images = st.number_input(
@@ -112,13 +110,13 @@ def main():
             key="n_cols_input",
         )
 
-        config["num_similar_images"] = num_similar_images
-        config["batch_size"] = batch_size
-        config['n_cols'] = n_cols
+        config['batch_size']=batch_size
+        config['num_similar_images']=num_similar_images
+        config['n_cols']=n_cols
 
-
-        with open("config.json", "w") as f:
-            json.dump(config, f)
+        print('config: ', config)
+        save_config(config)
+        config = load_config()
 
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
@@ -133,19 +131,21 @@ def main():
 
         image = Image.open(temp_file_path)
 
-        results = db.get_n_similar_images(
-            [temp_file_path], k=config.get("num_similar_images", 20)
+        results = get_similar_images(
+            db, [temp_file_path], config.get("num_similar_images", 20)
         )
-        similar_images = results["uris"][0]
 
-        _, l, _ = st.columns([2, 2, 2])
+        if results:
+            similar_images = results["uris"][0]
 
-        with l:
-            st.image(image, caption="Main Image", use_column_width=True, width=200)
+            _, l, _ = st.columns([2, 2, 2])
 
-        st.subheader("Similar Images")
+            with l:
+                st.image(image, caption="Main Image", use_column_width=True, width=200)
 
-        fig = show_images2(similar_images, n_cols)
+            st.subheader("Similar Images")
+
+            fig = show_images2(similar_images, n_cols)
 
         os.unlink(temp_file_path)
 

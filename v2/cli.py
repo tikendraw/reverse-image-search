@@ -1,24 +1,24 @@
 import click
 from pathlib import Path
-from PIL import Image
-import os
-import tempfile
-import json
 from .utils import show_image_in_terminal
-from v2.embed_model import EfficientNetEmbeddingFunction
-from v2.embedding_store import EmbeddingStore
-from functools import cache
-try:
-    with open("config.json", "r") as f:
-        config = json.load(f)
-except FileNotFoundError:
-    config = {}
-    
-@cache
-def load_embed_store():
-    embedding_model = EfficientNetEmbeddingFunction()
-    db = EmbeddingStore("local_embeddings", embedding_model)
-    return db
+from v2.common import (
+    load_embed_store,
+    create_embeddings,
+    update_embeddings,
+    delete_embeddings,
+    get_similar_images,
+    load_config,
+    save_config,
+    list_images,
+)
+from functools import partial
+
+
+INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", )
+
+list_images = partial(list_images, include_extensions=INCLUDE_IMAGE_EXTENSIONS)
+
+config = load_config()
 
 @click.group()
 def cli_func():
@@ -34,15 +34,9 @@ def search(image_paths, num_results, show_image):
     """
     db = load_embed_store()
 
+    result = get_similar_images(db, image_paths, num_results)
 
-    if not db.collection.count() > 0:
-        click.echo("Error: No embeddings found. Please create embeddings first.")
-        return
-    
-    if image_paths:
-
-        result = db.get_n_similar_images(image_paths, k=num_results)
-
+    if result:
         for i, similar_image_paths in enumerate(result["uris"]):
             image_path = str(Path(image_paths[i]).absolute())
 
@@ -58,8 +52,6 @@ def search(image_paths, num_results, show_image):
                 click.echo(f"{i}.  {click.style(clickable_link, fg='blue', underline=True)}")
             
             print("\n","-"*3, "\n")
-    else:
-        click.echo("Please provide at least one image path using the '-i' option.")
 
 
 @click.group()
@@ -71,115 +63,74 @@ def embed():
 
 @embed.command()
 @click.option('--dir_path', '-d', type=click.Path(exists=True), required=True, help='Path to the directory containing images')
-def create(dir_path):
+@click.option('--recursive', '-r', type=click.BOOL, default=True, help='search recursively in  directory')
+def create(dir_path, recursive):
     """
     Creates embeddings for images in a directory.
     """
     db = load_embed_store()
-
-    try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        config = {"folders_embedded": []}
-
-    if dir_path not in config["folders_embedded"]:
-        
-        db.add_images(image_dir=dir_path)
-        config["folders_embedded"].append(dir_path)
-
-        with open("config.json", "w") as f:
-            json.dump(config, f)
-
-        click.echo(f"Embeddings created for images in '{dir_path}' and config updated.")
-    else:
-        click.echo(f"Embeddings already exist for '{dir_path}'. Use 'embed update' to update them.")
+    created_paths = create_embeddings(db, dir_path, recursive, config)
+    config["folders_embedded"].extend(created_paths)
+    config["folders_embedded"] = list(set(config["folders_embedded"]))
+    save_config(config)
 
 @embed.command()
 @click.option('--dir_path', '-d', type=click.Path(exists=True), required=True, help='Path to the directory containing images')
-def update(dir_path):
+@click.option('--recursive', '-r', type=click.BOOL, default=True, help='update embeddings recursively in  directory')
+def update(dir_path, recursive):
     """
     Updates embeddings for images in a directory.
     """
     db = load_embed_store()
+    updated_paths = update_embeddings(db, dir_path, recursive, config)
+    
+    if updated_paths:
+        config["folders_embedded"].extend(updated_paths)
+        config["folders_embedded"] = list(set(config["folders_embedded"]))
+        save_config(config)
 
-    try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        config = {"folders_embedded": []}
-
-    if dir_path in config["folders_embedded"]:
-        db.update_images(image_dir=dir_path)
-        click.echo(f"Embeddings updated for images in '{dir_path}'.")
-    else:
-        click.echo(f"Embeddings do not exist for '{dir_path}'. Use 'embed create' to create them.")
 
 @embed.command()
 @click.option('--dir_path', '-d', type=click.Path(exists=True), required=True, help='Path to the directory containing images')
-def delete(dir_path):
+@click.option('--recursive', '-r', type=click.BOOL, default=True, help='delete embeddings recursively')
+def delete(dir_path, recursive):
     """
     Deletes embeddings for images in a directory.
     """
     db = load_embed_store()
-
-    try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        config = {"folders_embedded": []}
-
-    if dir_path in config["folders_embedded"]:
+    deleted_paths = delete_embeddings(db, dir_path, recursive, config)
+    
+    if dir_path.lower().strip() == 'delete_all_embeddings':
+        config["folders_embedded"] = []
+    elif deleted_paths:
+        config["folders_embedded"] = [i for i in config["folders_embedded"] if i not in deleted_paths]
         
-        if not str(dir_path).lower().strip()=='delete_all_embeddings':
-            db.delete_embeddings(image_dir=dir_path)
-            
-            # update the config
-            config["folders_embedded"].remove(dir_path)
-            with open("config.json", "w") as f:
-                json.dump(config, f)
-        else:
-            db.delete_collection()
-            
-            # update the config
-            config["folders_embedded"] = []
-            with open("config.json", "w") as f:
-                json.dump(config, f)
-                
-        click.echo(f"Deleting embeddings for '{dir_path}'!")
-    else:
-        click.echo(f"Embeddings do not exist for '{dir_path}'.")
+    save_config(config)
 
 @click.command()
 def show_embedded_folders():
     """
     Shows the list of folders for which embeddings have been created.
     """
-    try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        config = {"folders_embedded": []}
-
+    
     if config["folders_embedded"]:
         click.echo("Embedded folders:")
         for folder in config["folders_embedded"]:
-            click.echo(f"- {folder}")
+            click.echo(folder)
     else:
-        click.echo("No folders have been embedded yet.")
+        click.echo("No folders have been embedded.")
+
+
 
 @click.command()
 def show_configs():
     """
     Shows the current configuration.
     """
-    try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        config = {}
+    from pprint import pprint
+    for i in config:
+        click.echo(f"{i}: {config[i]}")
 
-    click.echo(json.dumps(config, indent=4))
 
 @click.command()
 @click.option('--batch_size', '-b', type=int, default=config.get("batch_size"), help='Batch size for creating embeddings')
@@ -189,23 +140,11 @@ def change_configs(batch_size, num_similar_images, n_cols):
     """
     Changes the configuration options.
     """
-    try:
-        with open("config.json", "r") as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        config = {}
+    config['batch_size']=batch_size
+    config['num_similar_images']=num_similar_images
+    config['n_cols']=n_cols
+    save_config(config)
 
-    if batch_size:
-        config["batch_size"] = batch_size
-    if num_similar_images:
-        config["num_similar_images"] = num_similar_images
-    if n_cols:
-        config["n_cols"] = n_cols
-
-    with open("config.json", "w") as f:
-        json.dump(config, f)
-
-    click.echo("Configuration updated successfully.")
 
 
 cli_func.add_command(search)

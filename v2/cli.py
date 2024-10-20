@@ -76,7 +76,7 @@ def create(dir_path, recursive):
 
 @embed.command()
 @click.option('--dir_path', '-d', type=click.Path(exists=True), required=True, help='Path to the directory containing images')
-@click.option('--recursive', '-r', type=click.BOOL, default=True, help='update embeddings recursively in  directory')
+@click.option('--recursive', '-r', type=click.BOOL, default=False, help='update embeddings recursively in  directory')
 def update(dir_path, recursive):
     """
     Updates embeddings for images in a directory.
@@ -92,7 +92,7 @@ def update(dir_path, recursive):
 
 @embed.command()
 @click.option('--dir_path', '-d', type=click.Path(exists=True), required=True, help='Path to the directory containing images')
-@click.option('--recursive', '-r', type=click.BOOL, default=True, help='delete embeddings recursively')
+@click.option('--recursive', '-r', type=click.BOOL, default=False, help='delete embeddings recursively')
 def delete(dir_path, recursive):
     """
     Deletes embeddings for images in a directory.

@@ -146,8 +146,8 @@ class EmbeddingStore(BaseVectorDB):
                 image_paths,
                 image_ids=image_ids,
                 batch_size=batch_size,
-                images_hashes=file_hashes,
-                images_mtime=file_mtimes,
+                image_hashes=file_hashes,
+                image_mtime=file_mtimes,
             )
             print(f"Added {len(new_images)} new images.")
 
@@ -160,8 +160,8 @@ class EmbeddingStore(BaseVectorDB):
                 image_paths,
                 image_ids,
                 batch_size=batch_size,
-                images_hashes=file_hashes,
-                images_mtime=file_mtimes,
+                image_hashes=file_hashes,
+                image_mtime=file_mtimes,
             )
             print(f"Updated {len(updated_images)} existing images.")
 
@@ -171,8 +171,8 @@ class EmbeddingStore(BaseVectorDB):
         self,
         image_paths: List[Union[str, Path]],
         image_ids: List[str],
-        images_hashes: List[str],
-        images_mtime: List[float],
+        image_hashes: List[str],
+        image_mtime: List[float],
         batch_size: int = BATCH_SIZE,
     ):
         """Update embeddings for given image paths and IDs."""
@@ -189,8 +189,8 @@ class EmbeddingStore(BaseVectorDB):
         self._update_cache(
             image_paths=image_paths,
             image_ids=image_ids,
-            file_hashes=images_hashes,
-            file_mtimes=images_mtime,
+            file_hashes=image_hashes,
+            file_mtimes=image_mtime,
         )
 
     def embed_images(self, image_paths: List[str], batch_size: int = BATCH_SIZE):
@@ -213,8 +213,8 @@ class EmbeddingStore(BaseVectorDB):
             image_paths,
             image_ids=image_ids,
             batch_size=batch_size,
-            images_hashes=image_hashes,
-            images_mtime=image_mtime,
+            image_hashes=image_hashes,
+            image_mtime=image_mtime,
         )
 
     def _add_images(

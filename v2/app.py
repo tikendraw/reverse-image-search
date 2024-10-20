@@ -1,22 +1,22 @@
+import os
+import tempfile
+from functools import partial
+
+import pyperclip
 import streamlit as st
 from PIL import Image
-import os
-import tempfile
-from PIL import Image
-import os
-import tempfile
+
 from v2.common import (
-    load_embed_store,
     create_embeddings,
-    update_embeddings,
     delete_embeddings,
     get_similar_images,
+    list_images,
     load_config,
+    load_embed_store,
     save_config,
     show_images2,
-    list_images
+    update_embeddings,
 )
-from functools import partial
 
 INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", )
 
@@ -147,6 +147,10 @@ def main():
 
             fig = show_images2(similar_images, n_cols)
 
+
+        if st.button('Copy paths to clipboard'):    
+            pyperclip.copy(similar_images)
+            st.success('Text copied successfully!')
         os.unlink(temp_file_path)
 
 

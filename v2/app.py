@@ -42,8 +42,6 @@ def main():
             with st.expander(f"Embedded folders({len(config['folders_embedded'])})"):
                 for folder in config["folders_embedded"]:
                     st.write(folder)
-        
-
 
         recursive = st.checkbox("Recursive", value=True)
         
@@ -121,37 +119,47 @@ def main():
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
     if uploaded_file is not None:
-
         if not db.collection.count() > 0:
             st.error("Create Embeddings first")
+            return
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
-            temp_file.write(uploaded_file.getvalue())
-            temp_file_path = temp_file.name
+        # Create a temporary file and ensure it's closed properly
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
+                temp_file.write(uploaded_file.getvalue())
+                temp_file_path = temp_file.name
 
-        image = Image.open(temp_file_path)
+            # Open and close the image explicitly
+            with Image.open(temp_file_path) as image:
+                results = get_similar_images(
+                    db, [temp_file_path], config.get("num_similar_images", 20)
+                )
 
-        results = get_similar_images(
-            db, [temp_file_path], config.get("num_similar_images", 20)
-        )
+                if results:
+                    similar_images = results["uris"][0]
 
-        if results:
-            similar_images = results["uris"][0]
+                    _, l, _ = st.columns([2, 2, 2])
 
-            _, l, _ = st.columns([2, 2, 2])
+                    with l:
+                        st.image(image, caption="Main Image", use_column_width=True, width=200)
 
-            with l:
-                st.image(image, caption="Main Image", use_column_width=True, width=200)
+                    st.subheader("Similar Images")
 
-            st.subheader("Similar Images")
+                    fig = show_images2(similar_images, n_cols)
 
-            fig = show_images2(similar_images, n_cols)
+                    if st.button('Copy paths to clipboard'):    
+                        pyperclip.copy(similar_images)
+                        st.success('Text copied successfully!')
 
-
-        if st.button('Copy paths to clipboard'):    
-            pyperclip.copy(similar_images)
-            st.success('Text copied successfully!')
-        os.unlink(temp_file_path)
+        finally:
+            # Clean up: Close any remaining file handles and delete the temp file
+            try:
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.close(os.open(temp_file_path, os.O_RDONLY))  # Force close any remaining handles
+                    os.unlink(temp_file_path)
+            except Exception as e:
+                print(f"Error cleaning up temporary file: {e}")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 This is a simple reverse image search tool that uses the Streamlit framework. It allows users to find similar images locally.
 
 ## Why is it helpful?
-This tool can help identify similar images. This tools uses EfficientNet-B0 for vector embedding and Chromadb(vector database) for vector storage and retrieval. EfficientNet-B0 is a lightweight convolutional neural network architecture that is designed to be efficient and accurate for image recognition tasks. 
+This tool can help identify similar images. This uses EfficientNet-B0 for vector embedding and Chromadb(vector database) for vector storage and retrieval. EfficientNet-B0 is a lightweight convolutional neural network architecture that is designed to be efficient and accurate for image recognition tasks. 
 
 ## Installation
 To use the reverse image search engine, simply follow these steps:

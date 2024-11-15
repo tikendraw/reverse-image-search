@@ -123,14 +123,12 @@ def main():
             st.error("Create Embeddings first")
             return
 
-        # Create a temporary file and ensure it's closed properly
         temp_file_path = None
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
                 temp_file.write(uploaded_file.getvalue())
                 temp_file_path = temp_file.name
 
-            # Open and close the image explicitly
             with Image.open(temp_file_path) as image:
                 results = get_similar_images(
                     db, [temp_file_path], config.get("num_similar_images", 20)
@@ -153,10 +151,9 @@ def main():
                         st.success('Text copied successfully!')
 
         finally:
-            # Clean up: Close any remaining file handles and delete the temp file
             try:
                 if temp_file_path and os.path.exists(temp_file_path):
-                    os.close(os.open(temp_file_path, os.O_RDONLY))  # Force close any remaining handles
+                    os.close(os.open(temp_file_path, os.O_RDONLY))  
                     os.unlink(temp_file_path)
             except Exception as e:
                 print(f"Error cleaning up temporary file: {e}")

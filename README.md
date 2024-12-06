@@ -54,6 +54,7 @@ pip install .
     ```bash
     image_search_cli embed delete -d <directory_path>
     ```
+    > Use `delete_all_embeddings` string to delete all at once
   * Delete all embeddings
     ```bash
     image_search_cli embed delete -d delete_all_embeddings

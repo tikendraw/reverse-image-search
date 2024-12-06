@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reverse-image-search"
-version = "0.1.7"
+version = "0.1.8"
 description = "Searches for similar images locally"
 authors = ["tikendraw <tikendraksahu1029@gmail.com>"]
 readme = "README.md"
@@ -11,13 +11,13 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-torch = "^2.4.1"
 chromadb = "^0.5.12"
 streamlit = "^1.39.0"
 click = "^8.1.7"
 chafa-py = "^1.2.0"
 pyperclip = "^1.9.0"
 transformers = "^4.46.3"
+torch = "^2.5.1"
 
 
 [tool.poetry.group.dev.dependencies]

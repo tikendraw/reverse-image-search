@@ -9,7 +9,9 @@ import numpy as np
 from chromadb import PersistentClient
 from chromadb.api.types import EmbeddingFunction
 from chromadb.utils.data_loaders import ImageLoader
+import logging
 from tqdm import tqdm
+from chromadb.api.models.Collection import Collection
 
 from v2.basevectordb import BaseVectorDB
 
@@ -34,7 +36,7 @@ class EmbeddingStore(BaseVectorDB):
 
     def setup(self):
         self._client = self._initialize_client()
-        self.collection = self._get_or_create_collection()
+        self.collection:Collection = self._get_or_create_collection()
 
     def _initialize_client(self) -> PersistentClient:
         return PersistentClient(path=self._save_dir)
@@ -182,7 +184,13 @@ class EmbeddingStore(BaseVectorDB):
             batch_paths = image_paths[i : i + batch_size]
             batch_ids = image_ids[i : i + batch_size]
 
-            embeddings = self.embed_images(batch_paths, batch_size=batch_size)
+            embeddings, bad_images = self.embed_images(batch_paths, batch_size=batch_size)
+            
+            if bad_images:
+                bad_paths, bad_idx = bad_images.keys(), bad_images.values()
+                batch_paths = [i for i in batch_paths if i not in bad_paths]
+                batch_ids = [i for n,i in batch_ids if n not in bad_idx]
+                    
             self.collection.update(
                 ids=batch_ids, uris=batch_paths, embeddings=embeddings
             )
@@ -238,7 +246,14 @@ class EmbeddingStore(BaseVectorDB):
         for i in tqdm(range(0, len(image_paths), batch_size), desc="Adding images"):
             batch_paths = image_paths[i : i + batch_size]
             batch_ids = image_ids[i : i + batch_size]
-            embeddings = self.embed_images(batch_paths, batch_size=batch_size)
+            
+            embeddings, bad_images = self.embed_images(batch_paths, batch_size=batch_size)
+            
+            if bad_images:
+                bad_paths, bad_idx = bad_images.keys(), bad_images.values()
+                batch_paths = [i for i in batch_paths if i not in bad_paths]
+                batch_ids = [i for n,i in batch_ids if n not in bad_idx]
+            
             self.collection.add(ids=batch_ids, uris=batch_paths, embeddings=embeddings)
 
         self._update_cache(
@@ -250,14 +265,19 @@ class EmbeddingStore(BaseVectorDB):
 
         self.save_cache()
 
-    def get_n_similar_images(self, image: str, k: int = 5):
+    def get_n_similar_images(self, image: str, k: int = 5)->dict:
         """Return the top `k` similar images for a given image."""
-        return self.collection.query(
+        try:
+            output = self.collection.query(
             query_uris=image,
             include=["uris", "distances", "metadatas", "embeddings", "documents"],
             n_results=k,
-        )
-
+            )
+            return output
+        except ValueError:
+            logging.error("Failed to generate Embedding")
+            return {}
+        
     def delete_collection(self):
         """Delete the current collection from the client."""
         self._client.delete_collection(self.collection_name)

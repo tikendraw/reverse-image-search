@@ -4,6 +4,7 @@ from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from PIL import Image
 import torch
 import numpy as np
+import logging
 
 
 class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
@@ -24,9 +25,10 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         """
         if isinstance(image, str) or isinstance(image, Path):
             image = Image.open(image)
-
-        if isinstance(image, np.ndarray):
-            image = Image.fromarray(image) 
+        elif isinstance(image, np.ndarray):
+            image = Image.fromarray(image)
+        elif not isinstance(image,Image.Image):
+            return None
 
         if image.mode != "RGB":
             image = image.convert("RGB")
@@ -48,8 +50,11 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         Embeds a single image by first loading and processing it, then passing it to the model.
         """
         pixel_values = self.load_image(image)
-        embeddings = self._embed(pixel_values)
-        return embeddings.cpu().numpy().tolist()
+        if not (pixel_values is None):
+            embeddings = self._embed(pixel_values)
+            return embeddings.cpu().numpy().tolist()
+        else:
+            logging.error("Failed to load image.")
 
     def batch_embed_images(
         self, images: list[str | Path | Image.Image | np.ndarray], batch_size: int = 32
@@ -58,17 +63,43 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         Embeds a batch of images, processing them in batches of the specified batch_size.
         """
         all_embeddings = []
-
+        bad_images={}
         for i in range(0, len(images), batch_size):
             batch = images[i : i + batch_size]
             processed_images = [self.load_image(image) for image in batch]
+            for num, (iurl, ipro) in enumerate(zip(batch, processed_images)):
+                if ipro is None:
+                    bad_images[iurl]=num
+                    logging.error(f"Failed processing the image: {iurl}")
+            
+            try: 
+                processed_images=[i for i in processed_images if i is not None]
+                batched_images = torch.cat(processed_images).to(self.device)
+                batch_embeddings = self._embed(batched_images)
+                all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
+            except Exception as e:
+                logging.error(f"Error while creating Embeddings for batch of images: {', '.join(batch)}", exc_info=True)
+                
+        return all_embeddings, bad_images
+    
+    def __call__(
+        self, images: list[str | Path | Image.Image | np.ndarray], batch_size: int = 32
+    ):
+        """
+        Embeds a batch of images, processing them in batches of the specified batch_size.
+        """
+        all_embeddings = []
+        for i in range(0, len(images), batch_size):
+            batch = images[i : i + batch_size]
+            processed_images = [self.load_image(image) for image in batch]
+            for num, (iurl, ipro) in enumerate(zip(batch, processed_images)):
+                if ipro is None:
+                    logging.error(f"Failed processing the image: {iurl}")
+            
+            processed_images=[i for i in processed_images if i is not None]
             batched_images = torch.cat(processed_images).to(self.device)
             batch_embeddings = self._embed(batched_images)
             all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
 
         return all_embeddings
 
-    def __call__(
-        self, images: list[Image.Image | Path | str], batch_size: int = 8
-    ) -> Embeddings:
-        return self.batch_embed_images(images, batch_size=batch_size)

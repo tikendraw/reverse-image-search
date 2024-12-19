@@ -1,17 +1,20 @@
-import click
-from pathlib import Path
-from PIL import Image
-import os
-import tempfile
+
 import json
-from .utils import show_image_in_terminal, list_items_in_dir
+import logging
+from functools import cache, partial
+from pathlib import Path
+
+import click
+import streamlit as st
+from PIL import Image
+from tqdm import tqdm
+
+from v2.config import EMBEDDING_DIR, config_file
+from v2.config import load_config as l_config
 from v2.embed_model import EfficientNetEmbeddingFunction
 from v2.embedding_store import EmbeddingStore
-from functools import cache
-from v2.config import EMBEDDING_DIR, load_config as l_config, save_config, config_file
-from functools import partial
-import streamlit as st
-from tqdm import tqdm
+
+from .utils import list_items_in_dir
 
 INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", )
 
@@ -101,7 +104,11 @@ def get_similar_images(db, image_paths, num_results):
         return None
 
     if image_paths:
-        return db.get_n_similar_images(image_paths, k=num_results)
+        try: 
+            return db.get_n_similar_images(image_paths, k=num_results)
+        except ValueError:
+            logging.error("Failed to generate Embeddings.")
+            return {}
     else:
         if not "streamlit" in str(st.__path__):
             click.echo("Please provide at least one image path.")

@@ -149,7 +149,8 @@ def main():
                     if st.button('Copy paths to clipboard'):    
                         pyperclip.copy(similar_images)
                         st.success('Text copied successfully!')
-
+                else:
+                    st.error("Failed to generate Embeddings.")
         finally:
             try:
                 if temp_file_path and os.path.exists(temp_file_path):

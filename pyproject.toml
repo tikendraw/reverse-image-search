@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reverse-image-search"
-version = "0.1.8"
+version = "0.1.9"
 description = "Searches for similar images locally"
 authors = ["tikendraw <tikendraksahu1029@gmail.com>"]
 readme = "README.md"

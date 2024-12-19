@@ -4,7 +4,8 @@ from pathlib import Path
 import torch
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from PIL import Image
-from transformers import AutoImageProcessor, AutoModel
+import torch
+import numpy as np
 
 
 class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
@@ -29,6 +30,12 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
             else:
                 logging.error('Image type not supported(knowingly), use str or pathlib.Path ')
                 return None
+        if isinstance(image, str) or isinstance(image, Path):
+            image = Image.open(image)
+        elif isinstance(image, np.ndarray):
+            image = Image.fromarray(image)
+        elif not isinstance(image,Image.Image):
+            return None
 
             if image.mode != "RGB":
                 image = image.convert("RGB")
@@ -53,12 +60,11 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         Embeds a single image by first loading and processing it, then passing it to the model.
         """
         pixel_values = self.load_image(image)
-        if pixel_values is not None:
+        if not (pixel_values is None):
             embeddings = self._embed(pixel_values)
             return embeddings.cpu().numpy().tolist()
         else:
-            logging.error(f"Failed to load image: {image}")
-        return None
+            logging.error("Failed to load image.")
 
     def batch_embed_images(
         self, images: list[str | Path], batch_size: int = 32
@@ -67,28 +73,49 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         Embeds a batch of images, processing them in batches of the specified batch_size.
         """
         all_embeddings = []
-        bad_images = []
+        bad_images={}
         for i in range(0, len(images), batch_size):
             batch = images[i : i + batch_size]
             processed_images = [self.load_image(image) for image in batch]
-            bad_images = [image for image, pixel_values in zip(batch, processed_images) if pixel_values is None]
-            processed_images = [pixel_values for pixel_values in processed_images if pixel_values is not None]
+            for num, (iurl, ipro) in enumerate(zip(batch, processed_images)):
+                if ipro is None:
+                    bad_images[iurl]=num
+                    logging.error(f"Failed processing the image: {iurl}")
             
-            if not processed_images:
-                continue
-            
-            try:
-              batched_images = torch.cat(processed_images).to(self.device)
-              batch_embeddings = self._embed(batched_images)
-              all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
+            try: 
+                processed_images=[i for i in processed_images if i is not None]
+                batched_images = torch.cat(processed_images).to(self.device)
+                batch_embeddings = self._embed(batched_images)
+                all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
             except Exception as e:
-              logging.error(f"Error during batch embedding, skipping batch: {e}, Check this batch images: {[', '.join(batch)]}")
+                logging.error(f"Error while creating Embeddings for batch of images: {', '.join(batch)}", exc_info=True)
+                
+        return all_embeddings, bad_images
+    
+    def __call__(
+        self, images: list[str | Path | Image.Image | np.ndarray], batch_size: int = 32
+    ):
+        """
+        Embeds a batch of images, processing them in batches of the specified batch_size.
+        """
+        all_embeddings = []
+        for i in range(0, len(images), batch_size):
+            batch = images[i : i + batch_size]
+            processed_images = [self.load_image(image) for image in batch]
+            for num, (iurl, ipro) in enumerate(zip(batch, processed_images)):
+                if ipro is None:
+                    logging.error(f"Failed processing the image: {iurl}")
+            
+            processed_images=[i for i in processed_images if i is not None]
+            batched_images = torch.cat(processed_images).to(self.device)
+            batch_embeddings = self._embed(batched_images)
+            all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
 
         if bad_images:
           logging.warning(f"The following images failed to process : {', '.join(bad_images)}")
         return all_embeddings
 
     def __call__(
-        self, images: list[Path | str], batch_size: int = 8
+        self, images: list[Image.Image | Path | str], batch_size: int = 8
     ) -> Embeddings:
         return self.batch_embed_images(images, batch_size=batch_size)

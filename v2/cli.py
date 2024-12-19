@@ -1,18 +1,20 @@
-import click
+from functools import partial
 from pathlib import Path
-from .utils import show_image_in_terminal
+
+import click
+
 from v2.common import (
-    load_embed_store,
     create_embeddings,
-    update_embeddings,
     delete_embeddings,
     get_similar_images,
-    load_config,
-    save_config,
     list_images,
+    load_config,
+    load_embed_store,
+    save_config,
+    update_embeddings,
 )
-from functools import partial
 
+from .utils import show_image_in_terminal
 
 INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", )
 
@@ -52,7 +54,9 @@ def search(image_paths, num_results, show_image):
                 click.echo(f"{i}.  {click.style(clickable_link, fg='blue', underline=True)}")
             
             print("\n","-"*3, "\n")
-
+    else:
+        click.echo("Failed to generate Embeddings.")
+        
 
 @click.group()
 def embed():

@@ -1,9 +1,11 @@
+import logging
 from pathlib import Path
-from transformers import AutoImageProcessor, AutoModel
+
+import torch
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from PIL import Image
-import torch
-import logging
+from transformers import AutoImageProcessor, AutoModel
+
 
 class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
     """To use this EmbeddingFunction, you must have the transformers Python package installed."""
@@ -80,7 +82,7 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
               batch_embeddings = self._embed(batched_images)
               all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
             except Exception as e:
-              logging.error(f"Error during batch embedding, skipping batch: {e}")
+              logging.error(f"Error during batch embedding, skipping batch: {e}, Check this batch images: {[', '.join(batch)]}")
 
         if bad_images:
           logging.warning(f"The following images failed to process : {', '.join(bad_images)}")

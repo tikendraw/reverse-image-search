@@ -275,4 +275,4 @@ class EmbeddingStore(BaseVectorDB):
         delete_ids = [idd for idd, uri in zip(ids, uris) if uri in image_paths]
         self.collection.delete(ids=delete_ids)
         self._delete_cache(image_paths=image_paths)
-        print(f"deleted {len(delete_ids)} embeddins!")
+        print(f"deleted {len(delete_ids)} embeddings!")

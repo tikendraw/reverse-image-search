@@ -68,13 +68,9 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         bad_images = []
         for i in range(0, len(images), batch_size):
             batch = images[i : i + batch_size]
-            processed_images = []
-            for image in batch:
-                pixel_values = self.load_image(image)
-                if pixel_values is not None:
-                    processed_images.append(pixel_values)
-                else:
-                  bad_images.append(str(image))
+            processed_images = [self.load_image(image) for image in batch]
+            bad_images = [image for image, pixel_values in zip(batch, processed_images) if pixel_values is None]
+            processed_images = [pixel_values for pixel_values in processed_images if pixel_values is not None]
             
             if not processed_images:
                 continue

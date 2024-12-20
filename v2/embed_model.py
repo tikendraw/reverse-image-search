@@ -75,7 +75,7 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
             processed_images = [self.load_image(image) for image in batch]
             for num, (iurl, ipro) in enumerate(zip(batch, processed_images)):
                 if ipro is None:
-                    bad_images[iurl]=num
+                    bad_images[iurl]=i+num
                     logging.error(f"Failed processing the image: {iurl}")
             
             try: 

@@ -140,7 +140,7 @@ def main():
                     _, l, _ = st.columns([2, 2, 2])
 
                     with l:
-                        st.image(image, caption="Main Image", use_column_width=True, width=200)
+                        st.image(image, caption="Main Image", use_container_width=True, width=200)
 
                     st.subheader("Similar Images")
 

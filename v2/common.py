@@ -130,4 +130,4 @@ def show_images2(x: list, num_columns: int = 7):
         img = Image.open(i)
 
         with cols[(num - 1) % num_columns]:
-            st.image(img, caption=i.name, use_column_width=True)
+            st.image(img, caption=i.name, use_container_width=True)

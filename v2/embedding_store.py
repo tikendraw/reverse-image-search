@@ -1,21 +1,28 @@
 import hashlib
 import json
+import logging
 import os
+import random
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Union
 
 import numpy as np
 from chromadb import PersistentClient
+from chromadb.api.models.Collection import Collection
 from chromadb.api.types import EmbeddingFunction
 from chromadb.utils.data_loaders import ImageLoader
-import logging
 from tqdm import tqdm
-from chromadb.api.models.Collection import Collection
 
 from v2.basevectordb import BaseVectorDB
 
 BATCH_SIZE = 16
+
+
+
+def get_unique_id()->str:
+    return f"{uuid.uuid4()}_{datetime.now().strftime("%Y%m%d%H%M%S.%f")}_{random.randint(0, 99999)}"
 
 
 class EmbeddingStore(BaseVectorDB):
@@ -93,7 +100,7 @@ class EmbeddingStore(BaseVectorDB):
             file_mtime = os.path.getmtime(image_path)
 
             if image_path not in self.image_cache:
-                image_id = str(uuid.uuid4())
+                image_id = get_unique_id()
                 new_images["image_paths"].append((image_path))
                 new_images["image_ids"].append((image_id))
                 new_images["file_hashes"].append((file_hash))
@@ -189,7 +196,7 @@ class EmbeddingStore(BaseVectorDB):
             if bad_images:
                 bad_paths, bad_idx = bad_images.keys(), bad_images.values()
                 batch_paths = [i for i in batch_paths if i not in bad_paths]
-                batch_ids = [i for n,i in batch_ids if n not in bad_idx]
+                batch_ids = [i for n,i in enumerate(batch_ids) if n not in bad_idx]
                     
             self.collection.update(
                 ids=batch_ids, uris=batch_paths, embeddings=embeddings
@@ -235,7 +242,7 @@ class EmbeddingStore(BaseVectorDB):
     ):
         """Helper method to handle image addition logic."""
         if image_ids is None:
-            image_ids = [str(uuid.uuid4()) for _ in image_paths]
+            image_ids = [get_unique_id() for _ in image_paths]
 
         if image_hashes is None:
             image_hashes = [self.get_file_hash(path) for path in image_paths]
@@ -252,7 +259,7 @@ class EmbeddingStore(BaseVectorDB):
             if bad_images:
                 bad_paths, bad_idx = bad_images.keys(), bad_images.values()
                 batch_paths = [i for i in batch_paths if i not in bad_paths]
-                batch_ids = [i for n,i in batch_ids if n not in bad_idx]
+                batch_ids = [i for n,i in enumerate(batch_ids) if n not in bad_idx]
             
             self.collection.add(ids=batch_ids, uris=batch_paths, embeddings=embeddings)
 
@@ -295,4 +302,5 @@ class EmbeddingStore(BaseVectorDB):
         delete_ids = [idd for idd, uri in zip(ids, uris) if uri in image_paths]
         self.collection.delete(ids=delete_ids)
         self._delete_cache(image_paths=image_paths)
+        self.save_cache()
         print(f"deleted {len(delete_ids)} embeddings!")

@@ -13,6 +13,7 @@ from v2.config import EMBEDDING_DIR, config_file
 from v2.config import load_config as l_config
 from v2.embed_model import EfficientNetEmbeddingFunction
 from v2.embedding_store import EmbeddingStore
+from v2.basevectordb import BaseVectorDB
 
 from .utils import list_items_in_dir
 
@@ -82,15 +83,19 @@ def update_embeddings(db, dir_path, recursive, config) -> list[str]:
 
 
 
-def delete_embeddings(db, dir_path, recursive, config) -> list[str]:
-    if not str(dir_path).lower().strip() == 'delete_all_embeddings':
+def delete_embeddings(db:BaseVectorDB, dir_path, recursive, config) -> list[str]:
+    image_paths=[]
+
+    if str(dir_path).lower().strip() == 'delete_all_embeddings':
+        db.delete_collection()
+        image_paths=[]
+            
+    else:
         if dir_path in config["folders_embedded"]:
             image_paths = list_images(dir_path, recursive=recursive)
             image_paths = list(set(image_paths))
             db.delete_embeddings(image_paths=image_paths)
-    else:
-        db.delete_collection()
-        image_paths=[]
+        
             
     embedded_dirs = [str(Path(i).parent.absolute()) for i in image_paths]
     return list(set(embedded_dirs))

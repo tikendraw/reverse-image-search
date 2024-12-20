@@ -88,29 +88,6 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
                 
         return all_embeddings, bad_images
     
-    def __call__(
-        self, images: list[str | Path | Image.Image | np.ndarray], batch_size: int = 32
-    ):
-        """
-        Embeds a batch of images, processing them in batches of the specified batch_size.
-        """
-        all_embeddings = []
-        bad_images = {}
-        for i in range(0, len(images), batch_size):
-            batch = images[i : i + batch_size]
-            processed_images = [self.load_image(image) for image in batch]
-            for num, (iurl, ipro) in enumerate(zip(batch, processed_images)):
-                if ipro is None:
-                    logging.error(f"Failed processing the image: {iurl}")
-            
-            processed_images=[i for i in processed_images if i is not None]
-            batched_images = torch.cat(processed_images).to(self.device)
-            batch_embeddings = self._embed(batched_images)
-            all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
-
-        if bad_images:
-          logging.warning(f"The following images failed to process : {', '.join(bad_images)}")
-        return all_embeddings, bad_images
 
     def __call__(
         self, images: list[Image.Image | Path | str], batch_size: int = 8

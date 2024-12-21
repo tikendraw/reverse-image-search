@@ -75,7 +75,6 @@ def main():
         if st.button("Delete Embeddings"):
             print('deleting embeddings')
             deleted_paths = delete_embeddings(db, image_dir, recursive, config)
-            db.setup()
             
             if image_dir:
                 if image_dir.lower().strip() == 'delete_all_embeddings':

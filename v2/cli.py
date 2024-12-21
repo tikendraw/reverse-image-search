@@ -104,9 +104,7 @@ def delete(dir_path, recursive):
     db = load_embed_store()
     deleted_paths = delete_embeddings(db, dir_path, recursive, config)
     
-    if dir_path.lower().strip() == 'delete_all_embeddings':
-        config["folders_embedded"] = []
-    elif deleted_paths:
+    if deleted_paths:
         config["folders_embedded"] = [i for i in config["folders_embedded"] if i not in deleted_paths]
         
     save_config(config)
@@ -131,7 +129,6 @@ def show_configs():
     """
     Shows the current configuration.
     """
-    from pprint import pprint
     for i in config:
         click.echo(f"{i}: {config[i]}")
 

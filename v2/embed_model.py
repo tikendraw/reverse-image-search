@@ -69,24 +69,40 @@ class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):
         Embeds a batch of images, processing them in batches of the specified batch_size.
         """
         all_embeddings = []
-        bad_images={}
+        bad_images = {}
+
         for i in range(0, len(images), batch_size):
             batch = images[i : i + batch_size]
             processed_images = [self.load_image(image) for image in batch]
+
+            # Handle failed image processing and log errors
             for num, (iurl, ipro) in enumerate(zip(batch, processed_images)):
                 if ipro is None:
-                    bad_images[iurl]=i+num
+                    bad_images[iurl] = i + num
                     logging.error(f"Failed processing the image: {iurl}")
-            
-            try: 
-                processed_images=[i for i in processed_images if i is not None]
+
+            try:
+                # Filter out None processed images
+                processed_images = [i for i in processed_images if i is not None]
+                if not processed_images:
+                    continue  # Skip if no valid images in the batch
+
                 batched_images = torch.cat(processed_images).to(self.device)
                 batch_embeddings = self._embed(batched_images)
                 all_embeddings.extend(batch_embeddings.cpu().numpy().tolist())
+
             except Exception as e:
-                logging.error(f"Error while creating Embeddings for batch of images: {', '.join(batch)}", exc_info=True)
-                
+                logging.error(
+                    f"Error while creating embeddings for batch of images: {', '.join(batch)}",
+                    exc_info=True,
+                )
+                # Add all images in the current batch to bad_images if the try block fails
+                for num, image in enumerate(batch):
+                    if image not in bad_images:  # Avoid duplicates
+                        bad_images[image] = i + num
+
         return all_embeddings, bad_images
+
     
 
     def __call__(

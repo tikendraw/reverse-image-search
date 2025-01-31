@@ -7,15 +7,15 @@ import streamlit as st
 from PIL import Image
 
 from v2.common import (
-    create_embeddings,
+    create_embeddings_st,
     delete_embeddings,
-    get_similar_images,
+    get_similar_images_st,
     list_images,
     load_config,
     load_embed_store,
     save_config,
     show_images2,
-    update_embeddings,
+    update_embeddings_st,
 )
 
 INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", )
@@ -48,7 +48,7 @@ def main():
         if st.button("Create Embeddings"):
             print('creating embeddings')
             if image_dir and os.path.isdir(image_dir):
-                created_paths = create_embeddings(db, image_dir, recursive, config)
+                created_paths = create_embeddings_st(db, image_dir, recursive, config)
                 
                 if image_dir not in config["folders_embedded"]:
                     config["folders_embedded"].extend(created_paths)
@@ -60,11 +60,11 @@ def main():
         if st.button("Update Embeddings"):
             print('updating embeddings')
             if image_dir and os.path.isdir(image_dir):
-                updated_path=update_embeddings(db, image_dir, recursive, config)
+                updated_path=update_embeddings_st(db, image_dir, recursive, config)
             
             else:
                 for path in config["folders_embedded"]:
-                    updated_path=update_embeddings(db, path, recursive, config)
+                    updated_path=update_embeddings_st(db, path, recursive, config)
             
             if updated_path:
                 config["folders_embedded"].extend(updated_path)
@@ -129,7 +129,7 @@ def main():
                 temp_file_path = temp_file.name
 
             with Image.open(temp_file_path) as image:
-                results = get_similar_images(
+                results = get_similar_images_st(
                     db, [temp_file_path], config.get("num_similar_images", 20)
                 )
 

@@ -11,13 +11,12 @@ from tqdm import tqdm
 from v2.config import EMBEDDING_DIR, config_file
 from v2.config import load_config as l_config
 from v2.embed_model import EfficientNetEmbeddingFunction
-from v2.embedding_store import EmbeddingStore
+from v2.embedding_store import EmbeddingStore, list_images
 
 from .utils import list_items_in_dir
 
 INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", )
 
-list_images = partial(list_items_in_dir, include_extensions=INCLUDE_IMAGE_EXTENSIONS)
 
 @cache
 def load_embed_store():

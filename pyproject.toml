@@ -11,7 +11,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-chromadb = "^0.5.12"
+chromadb = "0.5.12"
 streamlit = "^1.39.0"
 click = "^8.1.7"
 chafa-py = "^1.2.0"

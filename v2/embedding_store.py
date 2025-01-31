@@ -17,12 +17,12 @@ from chromadb.utils.data_loaders import ImageLoader
 from tqdm import tqdm
 
 from v2.basevectordb import BaseVectorDB
-from v2.utils import list_items_in_dir
+from v2.utils import list_images_in_dir, filter_image_by_size
 
 BATCH_SIZE = 16
 INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg")
-
-list_images = partial(list_items_in_dir, include_extensions=INCLUDE_IMAGE_EXTENSIONS)
+filt = partial(filter_image_by_size, min_width= 100,min_height= 100)
+list_images = partial(list_images_in_dir, include_extensions=INCLUDE_IMAGE_EXTENSIONS, filter_callable=filt)
 
 def get_unique_id() -> str:
     return f"{uuid.uuid4()}_{datetime.now().strftime('%Y%m%d%H%M%S.%f')}_{random.randint(0, 99999)}"

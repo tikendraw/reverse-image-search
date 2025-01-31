@@ -4,14 +4,14 @@ from pathlib import Path
 import click
 
 from v2.common import (
-    create_embeddings,
+    create_embeddings_cli,
     delete_embeddings,
-    get_similar_images,
+    get_similar_images_cli,
     list_images,
     load_config,
     load_embed_store,
     save_config,
-    update_embeddings,
+    update_embeddings_cli,
 )
 
 from .utils import show_image_in_terminal
@@ -36,7 +36,7 @@ def search(image_paths, num_results, show_image):
     """
     db = load_embed_store()
 
-    result = get_similar_images(db, image_paths, num_results)
+    result = get_similar_images_cli(db, image_paths, num_results)
 
     if result:
         for i, similar_image_paths in enumerate(result["uris"]):
@@ -48,7 +48,7 @@ def search(image_paths, num_results, show_image):
             if show_image:
                 show_image_in_terminal(image_path)
             
-            click.echo(f"Similar images:")
+            click.echo("Similar images:")
             for i, similar_image_path in enumerate(similar_image_paths,1):
                 clickable_link =  f"file://{similar_image_path}"
                 click.echo(f"{i}.  {click.style(clickable_link, fg='blue', underline=True)}")
@@ -73,7 +73,7 @@ def create(dir_path, recursive):
     Creates embeddings for images in a directory.
     """
     db = load_embed_store()
-    created_paths = create_embeddings(db, dir_path, recursive, config)
+    created_paths = create_embeddings_cli(db, dir_path, recursive, config)
     config["folders_embedded"].extend(created_paths)
     config["folders_embedded"] = list(set(config["folders_embedded"]))
     save_config(config)
@@ -86,7 +86,7 @@ def update(dir_path, recursive):
     Updates embeddings for images in a directory.
     """
     db = load_embed_store()
-    updated_paths = update_embeddings(db, dir_path, recursive, config)
+    updated_paths = update_embeddings_cli(db, dir_path, recursive, config)
     
     if updated_paths:
         config["folders_embedded"].extend(updated_paths)

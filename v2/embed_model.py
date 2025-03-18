@@ -1,12 +1,11 @@
 import logging
 from pathlib import Path
 
+import numpy as np
 import torch
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 from PIL import Image
-import torch
 from transformers import AutoImageProcessor, AutoModel
-import numpy as np
 
 
 class EfficientNetEmbeddingFunction(EmbeddingFunction[Documents]):

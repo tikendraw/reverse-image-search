@@ -17,11 +17,11 @@ from chromadb.utils.data_loaders import ImageLoader
 from tqdm import tqdm
 
 from v2.basevectordb import BaseVectorDB
-from v2.utils import list_images_in_dir, filter_image_by_size
+from v2.utils import filter_image_by_size, list_images_in_dir
 
 BATCH_SIZE = 16
 INCLUDE_IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg")
-filt = partial(filter_image_by_size, min_width= 100,min_height= 100)
+filt = partial(filter_image_by_size, min_width= 28,min_height= 28)
 list_images = partial(list_images_in_dir, include_extensions=INCLUDE_IMAGE_EXTENSIONS, filter_callable=filt)
 
 def get_unique_id() -> str:
@@ -124,38 +124,54 @@ class EmbeddingStore(BaseVectorDB):
 
     def _process_batches(self, paths: List[str], ids: List[str], hashes: List[str], mtimes: List[float], batch_size: int, operation: str):
         """Processes embeddings in batches for adding or updating."""
+        successful_paths = []
+        successful_ids = []
+        successful_hashes = []
+        successful_mtimes = []
+
         for i in tqdm(range(0, len(paths), batch_size), desc=f"{operation.capitalize()} embeddings"):
             batch_paths = paths[i:i + batch_size]
             batch_ids = ids[i:i + batch_size]
+            batch_hashes = hashes[i:i + batch_size]
+            batch_mtimes = mtimes[i:i + batch_size]
 
             embeddings, bad_images = self.embed_images(batch_paths, batch_size=batch_size)
             valid_indices = [idx for idx in range(len(batch_paths)) if idx not in bad_images.values()]
 
-            current_ids = [batch_ids[idx] for idx in valid_indices]
-            current_uris = [batch_paths[idx] for idx in valid_indices]
-            current_embeddings = [embeddings[idx] for idx in valid_indices]
+            if valid_indices:  # Only process if there are valid images
+                current_ids = [batch_ids[idx] for idx in valid_indices]
+                current_uris = [batch_paths[idx] for idx in valid_indices]
+                current_embeddings = [embeddings[idx] for idx in valid_indices]
+                current_hashes = [batch_hashes[idx] for idx in valid_indices]
+                current_mtimes = [batch_mtimes[idx] for idx in valid_indices]
 
-            try:
-                assert len(current_ids) == len(current_uris) == len(current_embeddings), "Lengths of ids, uris, and embeddings should be the same."
-                assert len(current_ids) > 0, "No valid images found in the batch."
-            except AssertionError as e:
-                logging.error(f"Error during {operation} operation: {e}")
-                continue
+                try:
+                    if operation == "add":
+                        self.collection.add(
+                            ids=current_ids,
+                            uris=current_uris,
+                            embeddings=current_embeddings,
+                        )
+                    elif operation == "update":
+                        self.collection.update(
+                            ids=current_ids,
+                            uris=current_uris,
+                            embeddings=current_embeddings,
+                        )
 
-            if operation == "add":
-                self.collection.add(
-                    ids=current_ids,
-                    uris=current_uris,
-                    embeddings=current_embeddings,
-                )
-            elif operation == "update":
-                self.collection.update(
-                    ids=current_ids,
-                    uris=current_uris,
-                    embeddings=current_embeddings,
-                )
+                    successful_paths.extend(current_uris)
+                    successful_ids.extend(current_ids)
+                    successful_hashes.extend(current_hashes)
+                    successful_mtimes.extend(current_mtimes)
 
-        self._update_cache(paths, ids, hashes, mtimes)
+                except Exception as e:
+                    logging.error(f"Error during {operation} operation: {e}")
+                    continue
+
+        if successful_paths:
+            self._update_cache(successful_paths, successful_ids, successful_hashes, successful_mtimes)
+            return len(successful_paths)
+        return 0
 
     def embed_images(self, image_paths: List[str], batch_size: int = BATCH_SIZE):
         """Embeds a batch of images using the provided embedding model."""
@@ -187,7 +203,7 @@ class EmbeddingStore(BaseVectorDB):
         updates = self._get_updated_images(image_paths)
         for action, images in updates.items():
             if images["paths"]:
-                self._process_batches(
+                count = self._process_batches(
                     paths=images["paths"],
                     ids=images["ids"],
                     hashes=images["hashes"],
@@ -196,11 +212,10 @@ class EmbeddingStore(BaseVectorDB):
                     operation="add" if action == "new" else "update",
                 )
                 if action == "new":
-                    added_count += len(images["paths"])
+                    added_count += count
                 else:
-                    updated_count += len(images["paths"])
+                    updated_count += count
 
-        self._save_cache()
         return {"added": added_count, "updated": updated_count}
 
     def get_similar_images(self, image: str, k: int = 5) -> dict:
@@ -244,18 +259,20 @@ class EmbeddingStore(BaseVectorDB):
         Returns:
             The number of embeddings deleted.
         """
-        
-        self._remove_deleted_from_cache_and_db(dir_path, recursive) 
+        self._remove_deleted_from_cache_and_db(dir_path, recursive)
         all_images = list_images(dir_path, recursive=recursive)
-
         
-        to_delete_ids = [self.image_cache[path]["id"] for path in all_images]
-
+        to_delete_ids = []
+        for path in all_images:
+            if path in self.image_cache:
+                to_delete_ids.append(self.image_cache[path]["id"])
+        
         if to_delete_ids:
             self.collection.delete(ids=to_delete_ids)
-            self._delete_from_cache(all_images)
-            return len(to_delete_ids)
-        return 0
+            # Remove deleted images from cache so subsequent updates are treated as new.
+            self._delete_from_cache([path for path in all_images if path in self.image_cache])
+        
+        return len(to_delete_ids)
 
     def _remove_deleted_from_cache_and_db(self, dir_path: str, recursive: bool = False):
         """Removes embeddings from the cache and database for files that no longer exist."""

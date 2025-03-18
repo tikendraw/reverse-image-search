@@ -1,12 +1,11 @@
+import os
+import tempfile
+from pathlib import Path
+from typing import List, Optional, Tuple
+
 import chafa
 from chafa.loader import Loader
 from PIL import Image
-import tempfile
-import os
-from pathlib import Path
-from typing import List
-from pathlib import Path
-from typing import List, Tuple, Optional
 
 # Define default image extensions
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ) #".gif", ".bmp", ".tiff")
@@ -128,6 +127,11 @@ def show_image_in_terminal(image_path):
 
     # Perform center cropping
     cropped_img = img.crop((left, top, right, bottom))
+    
+    # Convert RGBA to RGB if necessary
+    if cropped_img.mode == 'RGBA':
+        cropped_img = cropped_img.convert('RGB')
+    
     temp_filename = f"temp_cropped_{image_path.stem}.jpg"
     cropped_img.save(temp_filename)
     image = Loader(temp_filename)

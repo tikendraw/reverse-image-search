@@ -9,3 +9,6 @@ v2/mores/
 local_embeddings/*
 hi.py
 config.json
+
+tests/test_images
+.venv/*

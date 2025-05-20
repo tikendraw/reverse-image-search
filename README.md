@@ -89,7 +89,7 @@ Future updates:
 If you would like to contribute to the reverse image search engine, please feel free to open a pull request.
 
 
-## Citation
+## Acknowledgement 
 1. EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks
 
 
